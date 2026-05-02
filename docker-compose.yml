@@ -1,0 +1,71 @@
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: syncboard_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: syncboard
+      POSTGRES_PASSWORD: syncboard_pass
+      POSTGRES_DB: syncboard
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U syncboard -d syncboard"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: syncboard_redis
+    restart: unless-stopped
+    command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: syncboard_backend
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql+asyncpg://syncboard:syncboard_pass@db:5432/syncboard
+      REDIS_URL: redis://redis:6379
+      SECRET_KEY: ${SECRET_KEY:-change-me-in-production-min-32-chars}
+      DEBUG: ${DEBUG:-false}
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: syncboard_frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "80:80"
+    environment:
+      REACT_APP_API_URL: /api
+      REACT_APP_WS_URL: ws://localhost/ws
+
+volumes:
+  postgres_data:
+  redis_data:
