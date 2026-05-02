@@ -10,7 +10,8 @@ from app.api import auth, boards, tasks, users, websocket
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+        # checkfirst=True prevents duplicate enum/table errors on redeploy
+        await conn.run_sync(Base.metadata.create_all, checkfirst=True)
     yield
     await engine.dispose()
 
