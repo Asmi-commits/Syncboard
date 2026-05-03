@@ -1,6 +1,10 @@
 import axios from 'axios'
 
-const BASE = '/api'
+// On Render: use the backend's public URL via env var
+// Locally: use /api (proxied by Vite)
+const BASE = import.meta.env.VITE_API_URL
+  ? `${import.meta.env.VITE_API_URL}/api`
+  : '/api'
 
 const http = axios.create({ baseURL: BASE, headers: { 'Content-Type': 'application/json' } })
 
@@ -11,26 +15,18 @@ http.interceptors.request.use(cfg => {
 })
 
 http.interceptors.response.use(r => r, async err => {
-  const orig = err.config
-  if (err.response?.status === 401 && !orig._retry) {
-    orig._retry = true
-    try {
-      const rt = localStorage.getItem('refresh_token')
-      const { data } = await axios.post(`${BASE}/auth/refresh`, { refresh_token: rt })
-      localStorage.setItem('access_token', data.access_token)
-      orig.headers.Authorization = `Bearer ${data.access_token}`
-      return http(orig)
-    } catch {
-      localStorage.clear()
-      window.location.href = '/login'
-    }
+  if (err.response?.status === 401) {
+    localStorage.clear()
+    window.location.href = '/login'
   }
   return Promise.reject(err)
 })
 
 export const authApi = {
-  register: (d: any) => http.post('/auth/register', d),
-  login: (d: any) => http.post('/auth/login', d),
+  register: (d: { email: string; username: string; password: string; full_name?: string }) =>
+    http.post('/auth/register', d),
+  login: (d: { email: string; password: string }) =>
+    http.post('/auth/login', d),
   me: () => http.get('/auth/me'),
 }
 
@@ -40,9 +36,9 @@ export const boardsApi = {
   get: (id: number) => http.get(`/boards/${id}`),
   update: (id: number, d: any) => http.patch(`/boards/${id}`, d),
   delete: (id: number) => http.delete(`/boards/${id}`),
-  addMember: (bid: number, uid: number, role = 'member') =>
-    http.post(`/boards/${bid}/members`, { user_id: uid, role }),
-  createColumn: (bid: number, d: any) => http.post(`/boards/${bid}/columns`, d),
+  inviteMember: (boardId: number, d: { user_id: number; role?: string }) =>
+    http.post(`/boards/${boardId}/members`, d),
+  createColumn: (boardId: number, d: any) => http.post(`/boards/${boardId}/columns`, d),
 }
 
 export const tasksApi = {
@@ -50,6 +46,7 @@ export const tasksApi = {
   create: (boardId: number, d: any) => http.post(`/tasks/boards/${boardId}/tasks`, d),
   get: (id: number) => http.get(`/tasks/${id}`),
   update: (id: number, d: any) => http.patch(`/tasks/${id}`, d),
-  move: (id: number, d: any) => http.post(`/tasks/${id}/move`, d),
+  move: (id: number, d: { column_id: number; position: number }) =>
+    http.post(`/tasks/${id}/move`, d),
   delete: (id: number) => http.delete(`/tasks/${id}`),
 }
