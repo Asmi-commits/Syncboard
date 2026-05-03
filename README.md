@@ -24,6 +24,7 @@
 
 ## Quick Start
 
+🔗 **Live Demo:** [syncboard-frontend-g65z.onrender.com](https://syncboard-frontend-g65z.onrender.com)
 ### Prerequisites
 - Docker 24+ & Docker Compose v2
 - Git
@@ -157,3 +158,10 @@ certbot --nginx -d yourdomain.com
 | `PROD_HOST` | Server IP/hostname |
 | `PROD_USER` | SSH username |
 | `PROD_SSH_KEY` | Private SSH key |
+
+
+
+<img width="1440" height="900" alt="Screenshot 2026-05-03 at 3 59 06 PM" src="https://github.com/user-attachments/assets/972de157-27b2-47e5-a1a9-1abea5e3f564" />
+<img width="1440" height="900" alt="Screenshot 2026-05-03 at 3 58 58 PM" src="https://github.com/user-attachments/assets/7c0497d4-5781-4179-905f-46cf89127f1c" />
+<img width="1440" height="900" alt="Screenshot 2026-05-03 at 3 56 06 PM" src="https://github.com/user-attachments/assets/7196e253-3aec-497b-8d1d-6e34861a15b7" />
+
